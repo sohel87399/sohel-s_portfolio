@@ -70,6 +70,12 @@ body{background:#0a0a12;font-family:'Inter',sans-serif;color:#fff;overflow-x:hid
 
 /* timeline */
 .tl-line{position:absolute;left:5px;top:16px;bottom:0;width:1px;background:linear-gradient(to bottom,rgba(201,103,232,0.5),transparent)}
+
+/* hackathon win card */
+.win-card{background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(245,158,11,0.04));border:1px solid rgba(251,191,36,0.35);border-radius:14px;padding:20px;transition:border-color .25s,background .25s,transform .25s,box-shadow .25s}
+.win-card:hover{border-color:rgba(251,191,36,0.65);background:linear-gradient(135deg,rgba(251,191,36,0.14),rgba(245,158,11,0.08));transform:translateY(-3px);box-shadow:0 16px 48px rgba(251,191,36,0.12)}
+.win-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(251,191,36,0.20),rgba(245,158,11,0.12));border:1px solid rgba(251,191,36,0.45);border-radius:9999px;padding:3px 12px;font-size:11px;font-weight:700;color:#fbbf24;letter-spacing:0.06em;text-transform:uppercase}
+.win-tag{background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.25);border-radius:9999px;padding:3px 10px;font-size:11px;color:rgba(251,191,36,0.85);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -416,7 +422,7 @@ function Stats() {
         <StatItem target={6}  suffix="+"  label="Projects Shipped"/>
         <StatItem target={8}  suffix="+"  label="Certifications"/>
         <StatItem target={98} suffix="%"  label="XII Score"/>
-        <StatItem target={2}  suffix="+"  label="Hackathons"/>
+        <StatItem target={3}  suffix="+"  label="Hackathons"/>
       </div>
     </div>
   );
@@ -614,6 +620,20 @@ const CERTS = [
   'Linux for Beginners','Ethical Hacking (NPTEL)',
 ];
 const HACKATHONS = [
+  {
+    title:'Outsyslayer Hackathon',
+    organizer:'Byond Campuz',
+    role:'1st Place 🏆',
+    project:'FalconSeg',
+    win: true,
+    desc:'Built a semantic segmentation model for pixel-level terrain classification in complex desert environments. Used SegFormer-B2 (transformer-based architecture), trained on high-resolution multi-class datasets. Tackled class imbalance using weighted loss functions to improve minority class detection.',
+    highlights:[
+      {icon:'🏆', text:'1st place out of all competing teams'},
+      {icon:'🤖', text:'Model: SegFormer-B2 (fine-tuned transformer)'},
+      {icon:'🏜️', text:'Task: Pixel-level terrain classification in desert environments'},
+    ],
+    tags:['SegFormer-B2','Semantic Segmentation','Weighted Loss','Class Imbalance','PyTorch'],
+  },
   {title:'AGNITE Hackathon',          role:'Automation Developer', desc:'Designed and built an intelligent chatbot agent to answer user queries automatically.'},
   {title:'Vibe Coding Competition',   role:'Full Stack Developer',  desc:'Designed and developed a complete full-stack web application end-to-end.'},
   {title:'Smart India Hackathon (SIH)',role:'Participant',           desc:'Represented college in the national-level SIH innovation challenge.'},
@@ -668,7 +688,33 @@ function Experience() {
           <div className="reveal right card">
             <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:20}}>Hackathons & Activities</p>
             <div style={{display:'flex',flexDirection:'column',gap:18}}>
-              {HACKATHONS.map((h,i)=>(
+              {HACKATHONS.map((h,i)=> h.win ? (
+                <div key={i} className="win-card">
+                  {/* badge row */}
+                  <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:12}}>
+                    <span className="win-badge">🏆 {h.role}</span>
+                    <span style={{fontSize:11,color:'rgba(251,191,36,0.55)',fontWeight:600,letterSpacing:'0.06em'}}>{h.organizer}</span>
+                  </div>
+                  {/* title + project */}
+                  <p style={{fontSize:15,color:'#fff',fontWeight:700,lineHeight:1.3}}>{h.title}</p>
+                  <p style={{fontSize:12,color:'rgba(251,191,36,0.75)',fontWeight:600,marginTop:3,letterSpacing:'0.05em'}}>Project: {h.project}</p>
+                  {/* description */}
+                  <p style={{fontSize:12,color:'rgba(255,255,255,0.52)',marginTop:10,lineHeight:1.65}}>{h.desc}</p>
+                  {/* highlights */}
+                  <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:12}}>
+                    {h.highlights.map((hl,j)=>(
+                      <div key={j} style={{display:'flex',alignItems:'flex-start',gap:8}}>
+                        <span style={{fontSize:13,flexShrink:0,marginTop:1}}>{hl.icon}</span>
+                        <span style={{fontSize:12,color:'rgba(255,255,255,0.68)',lineHeight:1.5}}>{hl.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {/* tags */}
+                  <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:14}}>
+                    {h.tags.map(t=><span key={t} className="win-tag">{t}</span>)}
+                  </div>
+                </div>
+              ) : (
                 <div key={i} style={{borderLeft:'2px solid rgba(201,103,232,0.30)',paddingLeft:14}}>
                   <p style={{fontSize:14,color:'#fff',fontWeight:600}}>{h.title}</p>
                   <p style={{fontSize:11,color:'#c084fc',fontWeight:600,marginTop:2,textTransform:'uppercase',letterSpacing:'0.08em'}}>{h.role}</p>
