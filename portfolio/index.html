@@ -26,6 +26,79 @@ body{background:#0a0a12;font-family:'Inter',sans-serif;color:#fff;overflow-x:hid
 /* scroll progress */
 #progress-bar{position:fixed;top:0;left:0;height:2px;z-index:200;background:linear-gradient(90deg,#FA93FA,#C967E8,#983AD6);transition:width 0.1s linear}
 
+/* ── LOADER ── */
+#loader{
+  position:fixed;inset:0;z-index:99999;
+  background:#0a0a12;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:32px;
+  transition:opacity 0.6s ease, visibility 0.6s ease;
+}
+#loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+
+#loader-name{
+  font-family:'Rubik',sans-serif;font-weight:900;
+  font-size:clamp(28px,5vw,52px);
+  letter-spacing:0.18em;text-transform:uppercase;
+  background:linear-gradient(135deg,#fff 0%,#FA93FA 50%,#983AD6 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  opacity:0;transform:translateY(20px);
+  transition:opacity 0.8s ease, transform 0.8s ease;
+}
+#loader-name.show{opacity:1;transform:translateY(0)}
+
+#loader-pic-wrap{
+  position:relative;width:clamp(120px,18vw,180px);height:clamp(120px,18vw,180px);
+  opacity:0;transform:scale(0.85);
+  transition:opacity 1s ease, transform 1s ease;
+}
+#loader-pic-wrap.show{opacity:1;transform:scale(1)}
+#loader-pic-glow{
+  position:absolute;inset:-10px;border-radius:50%;
+  background:linear-gradient(135deg,#FA93FA,#983AD6);
+  opacity:0.4;filter:blur(20px);
+}
+#loader-pic-ring{
+  position:absolute;inset:-3px;border-radius:50%;
+  border:2px solid rgba(201,103,232,0.6);
+}
+#loader-pic{
+  width:100%;height:100%;border-radius:50%;
+  object-fit:cover;object-position:top center;
+  position:relative;z-index:2;
+  border:3px solid rgba(8,6,22,0.85);
+  display:block;
+}
+
+#loader-bar-wrap{
+  width:clamp(200px,40vw,340px);
+  display:flex;flex-direction:column;gap:10px;
+}
+#loader-bar-track{
+  width:100%;height:3px;border-radius:9999px;
+  background:rgba(255,255,255,0.08);
+  overflow:hidden;
+}
+#loader-bar-fill{
+  height:100%;width:0%;border-radius:9999px;
+  background:linear-gradient(90deg,#FA93FA,#C967E8,#983AD6);
+  transition:width 0.05s linear;
+}
+#loader-pct{
+  font-family:'Rubik',sans-serif;font-weight:700;
+  font-size:clamp(48px,8vw,80px);
+  line-height:1;
+  background:linear-gradient(135deg,#fff,#FA93FA);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  text-align:center;
+  letter-spacing:-2px;
+}
+#loader-label{
+  font-size:11px;color:rgba(255,255,255,0.28);
+  letter-spacing:0.22em;text-transform:uppercase;
+  text-align:center;
+}
+
 /* utilities */
 .rubik{font-family:'Rubik',sans-serif;font-weight:700}
 .rubik-black{font-family:'Rubik',sans-serif;font-weight:900}
@@ -38,6 +111,16 @@ body{background:#0a0a12;font-family:'Inter',sans-serif;color:#fff;overflow-x:hid
 .pill:hover,.pill.active{background:rgba(201,103,232,0.30);border-color:rgba(201,103,232,0.70);color:#fff}
 .pill.active{cursor:default}
 .divider{border:none;border-top:1px solid rgba(255,255,255,0.06)}
+
+/* circular text spin */
+@keyframes spin-cw{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* vertical skill marquee */
+@keyframes marquee-up{0%{transform:translateY(0)}100%{transform:translateY(-33.333%)}}
+@keyframes marquee-down{0%{transform:translateY(-33.333%)}100%{transform:translateY(0)}}
+/* horizontal skill marquee */
+@keyframes marquee{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes marquee-rev{0%{transform:translateX(-50%)}100%{transform:translateX(0)}}
 
 /* typewriter cursor blink */
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
@@ -79,6 +162,58 @@ body{background:#0a0a12;font-family:'Inter',sans-serif;color:#fff;overflow-x:hid
 </style>
 </head>
 <body>
+
+<!-- ── LOADER ── -->
+<div id="loader">
+  <div id="loader-name">Sohel.Dev</div>
+  <div id="loader-pic-wrap">
+    <div id="loader-pic-glow"></div>
+    <div id="loader-pic-ring"></div>
+    <img id="loader-pic" src="sohel.png" alt="Sohel"/>
+  </div>
+  <div id="loader-bar-wrap">
+    <div id="loader-pct">0</div>
+    <div id="loader-bar-track"><div id="loader-bar-fill"></div></div>
+    <div id="loader-label">Loading portfolio</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TOTAL = 3000; // 3 seconds for 0→100
+  const pctEl   = document.getElementById('loader-pct');
+  const fillEl  = document.getElementById('loader-bar-fill');
+  const nameEl  = document.getElementById('loader-name');
+  const picWrap = document.getElementById('loader-pic-wrap');
+  const loader  = document.getElementById('loader');
+
+  // show name immediately
+  requestAnimationFrame(()=>requestAnimationFrame(()=>nameEl.classList.add('show')));
+
+  let start = null;
+  function tick(ts){
+    if(!start) start = ts;
+    const elapsed = ts - start;
+    const progress = Math.min(elapsed / TOTAL, 1);
+    const pct = Math.floor(progress * 100);
+    pctEl.textContent = pct;
+    fillEl.style.width = pct + '%';
+
+    // show photo at 40%
+    if(pct >= 40) picWrap.classList.add('show');
+
+    if(progress < 1){
+      requestAnimationFrame(tick);
+    } else {
+      pctEl.textContent = '100';
+      fillEl.style.width = '100%';
+      // wait 300ms then fade out loader
+      setTimeout(()=>{ loader.classList.add('hide'); }, 300);
+    }
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
 <video id="bg-video" autoplay muted loop playsinline
   src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260206_044704_dd33cb15-c23f-4cfc-aa09-a0465d4dcb54.mp4"></video>
 <div id="bg-overlay"></div>
@@ -308,6 +443,12 @@ function Hero() {
   return (
     <section id="hero" style={{minHeight:'100vh',position:'relative',display:'flex',flexDirection:'column',justifyContent:'center',padding:'0 clamp(20px,6vw,96px)',paddingTop:100,paddingBottom:80}}>
 
+      {/* hero inner — two-column layout */}
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:48,flexWrap:'wrap'}}>
+
+      {/* LEFT: text */}
+      <div style={{flex:'1 1 380px',minWidth:0}}>
+
       {/* availability badge */}
       <div style={{...a(0),display:'inline-flex',alignItems:'center',gap:8,background:'rgba(28,27,36,0.60)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:9999,padding:'7px 16px',marginBottom:32,alignSelf:'flex-start'}}>
         <span style={{width:7,height:7,borderRadius:'50%',background:'#4ade80',boxShadow:'0 0 8px #4ade80',flexShrink:0}}/>
@@ -365,6 +506,38 @@ function Hero() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </a>
       </div>
+
+      </div>{/* end left text column */}
+
+      {/* RIGHT: photo */}
+      <div style={{...a(0.5),flex:'0 0 auto',display:'flex',justifyContent:'center',alignItems:'flex-start',paddingTop:80}}>
+        <div style={{position:'relative',width:'clamp(340px,42vw,540px)',height:'clamp(340px,42vw,540px)'}}>
+          {/* glow ring */}
+          <div style={{position:'absolute',inset:-16,borderRadius:'50%',background:'linear-gradient(135deg,#FA93FA,#983AD6)',opacity:0.40,filter:'blur(32px)',zIndex:0}}/>
+          {/* border ring */}
+          <div style={{position:'absolute',inset:-5,borderRadius:'50%',border:'2px solid rgba(201,103,232,0.60)',zIndex:1}}/>
+          <img
+            src="sohel.png"
+            alt="Shaik Mahammad Sohel"
+            style={{
+              width:'100%',height:'100%',
+              borderRadius:'50%',
+              objectFit:'cover',
+              objectPosition:'top center',
+              position:'relative',zIndex:2,
+              border:'5px solid rgba(8,6,22,0.80)',
+              display:'block',
+            }}
+          />
+          {/* availability dot */}
+          <div style={{position:'absolute',bottom:24,right:24,zIndex:3,display:'flex',alignItems:'center',gap:6,background:'rgba(8,6,22,0.80)',border:'1px solid rgba(255,255,255,0.14)',borderRadius:9999,padding:'6px 14px'}}>
+            <span style={{width:7,height:7,borderRadius:'50%',background:'#4ade80',boxShadow:'0 0 8px #4ade80',flexShrink:0}}/>
+            <span style={{fontSize:12,color:'rgba(255,255,255,0.80)',whiteSpace:'nowrap',fontWeight:500}}>Available</span>
+          </div>
+        </div>
+      </div>
+
+      </div>{/* end hero inner */}
 
       {/* scroll hint */}
       <div style={{position:'absolute',bottom:32,left:'50%',transform:'translateX(-50%)',display:'flex',flexDirection:'column',alignItems:'center',gap:6,opacity:0.35}}>
@@ -464,42 +637,80 @@ function LogoCloud() {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   SKILLS — animated bars + pills
+   SKILLS — horizontal scrolling marquee rows with big logos
 ───────────────────────────────────────────────────────────────────────── */
-const SKILL_BARS = [
-  {name:'Python',       pct:85},
-  {name:'Docker',       pct:80},
-  {name:'Kubernetes',   pct:72},
-  {name:'Terraform',    pct:70},
-  {name:'AWS / Cloud',  pct:68},
-  {name:'FastAPI',      pct:75},
-  {name:'Linux',        pct:82},
-  {name:'Git / CI-CD',  pct:78},
+const SKILL_LOGOS = [
+  {name:'Python',     logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg'},
+  {name:'Docker',     logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg'},
+  {name:'Kubernetes', logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/kubernetes/kubernetes-plain.svg'},
+  {name:'Terraform',  logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/terraform/terraform-original.svg'},
+  {name:'AWS',        logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/amazonwebservices/amazonwebservices-original-wordmark.svg'},
+  {name:'Linux',      logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg'},
+  {name:'Git',        logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg'},
+  {name:'Jenkins',    logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/jenkins/jenkins-original.svg'},
+  {name:'FastAPI',    logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/fastapi/fastapi-original.svg'},
+  {name:'Java',       logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg'},
+  {name:'MySQL',      logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg'},
+  {name:'GitHub',     logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg'},
+  {name:'Bash',       logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg'},
+  {name:'VSCode',     logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vscode/vscode-original.svg'},
+  {name:'PowerBI',    logo:'https://img.icons8.com/color/96/power-bi.png'},
+  {name:'Ansible',    logo:'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/ansible/ansible-original.svg'},
 ];
-const SKILL_PILLS = {
-  'Languages':      ['Python','SQL','Shell Scripting','Java'],
-  'DevOps & CI/CD': ['Docker','Kubernetes','Jenkins','Terraform','Git','CI/CD'],
-  'Cloud & OS':     ['AWS EC2','Amazon S3','Linux','Windows'],
-  'Frameworks':     ['FastAPI','RESTful APIs','JSON'],
-  'Data & ML':      ['Power BI','Machine Learning','Data Science','Microservices','SDLC'],
-};
 
-function SkillBar({ name, pct }) {
-  const ref = useRef(null);
-  const [go, setGo] = useState(false);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setGo(true); obs.disconnect(); } }, { threshold: 0.3 });
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, []);
+const ROW1 = SKILL_LOGOS.slice(0, 8);
+const ROW2 = SKILL_LOGOS.slice(8, 16);
+
+function SkillLogoCard({skill}) {
+  const [hov, setHov] = useState(false);
   return (
-    <div ref={ref} style={{marginBottom:16}}>
-      <div style={{display:'flex',justifyContent:'space-between',marginBottom:6}}>
-        <span style={{fontSize:13,color:'rgba(255,255,255,0.80)',fontWeight:500}}>{name}</span>
-        <span style={{fontSize:12,color:'rgba(201,103,232,0.90)',fontWeight:600}}>{pct}%</span>
-      </div>
-      <div style={{height:5,borderRadius:9999,background:'rgba(255,255,255,0.08)'}}>
-        <div className="skill-bar-fill" style={{width: go ? pct+'%' : '0%'}}/>
+    <div
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        display:'flex',flexDirection:'column',alignItems:'center',gap:10,
+        padding:'20px 24px',
+        flexShrink:0,
+        background: hov ? 'rgba(201,103,232,0.14)' : 'rgba(255,255,255,0.05)',
+        border:`1px solid ${hov ? 'rgba(201,103,232,0.50)' : 'rgba(255,255,255,0.09)'}`,
+        borderRadius:20,
+        backdropFilter:'blur(12px)',
+        transition:'all 0.3s ease',
+        transform: hov ? 'scale(1.10) translateY(-4px)' : 'scale(1)',
+        cursor:'default',
+        minWidth:110,
+        boxShadow: hov ? '0 12px 36px rgba(152,58,214,0.28)' : 'none',
+      }}
+    >
+      <img
+        src={skill.logo} alt={skill.name}
+        style={{
+          width:64, height:64, objectFit:'contain',
+          filter: (skill.name==='GitHub'||skill.name==='Bash') ? 'invert(1)' : 'none',
+          transition:'transform 0.3s',
+          transform: hov ? 'scale(1.15)' : 'scale(1)',
+        }}
+        onError={e=>e.target.style.opacity='0'}
+      />
+      <span style={{fontSize:13,color:'rgba(255,255,255,0.80)',fontWeight:700,letterSpacing:'0.04em',textAlign:'center'}}>{skill.name}</span>
+    </div>
+  );
+}
+
+function SkillRow({skills, reverse=false}) {
+  const doubled = [...skills,...skills,...skills,...skills];
+  const dur = skills.length * 4;
+  const anim = reverse ? 'marquee-rev' : 'marquee';
+  return (
+    <div style={{overflow:'hidden',position:'relative',width:'100%'}}>
+      <div style={{position:'absolute',left:0,top:0,bottom:0,width:80,background:'linear-gradient(to right,rgba(10,10,18,1),transparent)',zIndex:2,pointerEvents:'none'}}/>
+      <div style={{position:'absolute',right:0,top:0,bottom:0,width:80,background:'linear-gradient(to left,rgba(10,10,18,1),transparent)',zIndex:2,pointerEvents:'none'}}/>
+      <div
+        style={{display:'flex',gap:14,animation:`${anim} ${dur}s linear infinite`,width:'max-content',padding:'8px 0'}}
+        onMouseEnter={e=>e.currentTarget.style.animationPlayState='paused'}
+        onMouseLeave={e=>e.currentTarget.style.animationPlayState='running'}
+      >
+        {doubled.map((s,i)=><SkillLogoCard key={i} skill={s}/>)}
       </div>
     </div>
   );
@@ -507,34 +718,18 @@ function SkillBar({ name, pct }) {
 
 function Skills() {
   return (
-    <section id="skills" style={{padding:'96px 0'}}>
-      <div style={{maxWidth:1152,margin:'0 auto',padding:'0 clamp(20px,5vw,80px)'}}>
+    <section id="skills" style={{padding:'96px 0',overflow:'hidden'}}>
+      <div style={{maxWidth:1400,margin:'0 auto',padding:'0 clamp(20px,5vw,80px)'}}>
         <div className="reveal" style={{marginBottom:56}}>
           <h2 className="rubik-black" style={{fontSize:'clamp(40px,6vw,72px)',textTransform:'uppercase',lineHeight:0.95,letterSpacing:'-2px'}}>
             <span className="grad-text">TECHNICAL</span><br/>
             <span style={{color:'#fff'}}>SKILLS.</span>
           </h2>
-          <p style={{marginTop:14,fontSize:15,color:'rgba(255,255,255,0.50)',maxWidth:500}}>Full-stack DevOps & Cloud toolkit — built through real projects and certified training.</p>
+          <p style={{marginTop:14,fontSize:15,color:'rgba(255,255,255,0.50)',maxWidth:500}}>Full-stack DevOps &amp; Cloud toolkit — built through real projects and certified training.</p>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:40}}>
-          {/* bars */}
-          <div className="reveal left">
-            <div className="card" style={{padding:28}}>
-              <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:24}}>Proficiency</p>
-              {SKILL_BARS.map(s => <SkillBar key={s.name} {...s}/>)}
-            </div>
-          </div>
-          {/* pills grid */}
-          <div style={{display:'flex',flexDirection:'column',gap:16}}>
-            {Object.entries(SKILL_PILLS).map(([cat,items],i)=>(
-              <div key={cat} className="reveal right card" style={{transitionDelay:`${i*0.08}s`}}>
-                <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:12}}>{cat}</p>
-                <div style={{display:'flex',flexWrap:'wrap',gap:7}}>
-                  {items.map(s=><span key={s} className="pill">{s}</span>)}
-                </div>
-              </div>
-            ))}
-          </div>
+        <div style={{display:'flex',flexDirection:'column',gap:20}}>
+          <SkillRow skills={ROW1} reverse={false}/>
+          <SkillRow skills={ROW2} reverse={true}/>
         </div>
       </div>
     </section>
@@ -545,61 +740,116 @@ function Skills() {
    PROJECTS — filterable
 ───────────────────────────────────────────────────────────────────────── */
 const ALL_PROJECTS = [
-  {title:'Voting App — Microservices', date:'Nov–Dec 2025', tags:['Docker','Microservices','DevOps'],   desc:'Multi-tier microservices voting system using Docker containers with decoupled service communication and orchestration.',link:'https://github.com/sohel87399'},
-  {title:'Coupon API Engine',          date:'Nov 2025',     tags:['Python','FastAPI','Docker'],          desc:'RESTful API with optimized algorithms to auto-calculate the best coupon. Deployed via Docker and cloud hosting.',link:'https://github.com/sohel87399'},
-  {title:'Terraform K8s Deployment',   date:'Nov 2025',     tags:['Terraform','Kubernetes','DevOps'],    desc:'Infrastructure as Code using Terraform to automate full Kubernetes environment provisioning with a single command.',link:'https://github.com/sohel87399'},
-  {title:'Titanic Survival Prediction',date:'Dec 2025',     tags:['Python','ML','Data Science'],         desc:'ML classification model for passenger survival prediction with data preprocessing, training, and evaluation.',link:'https://github.com/sohel87399'},
-  {title:'Shopping Cart System',       date:'Jun–Jul 2025', tags:['Java','Maven','MySQL'],               desc:'Modular Java web app with product browsing, cart management, and checkout workflow using Maven and MySQL.',link:'https://github.com/sohel87399'},
-  {title:'Intelligent Chatbot Agent',  date:'Hackathon',    tags:['AI','Automation','Python'],           desc:'AGNITE Hackathon — designed and built an intelligent chatbot agent to answer user queries automatically.',link:'https://github.com/sohel87399'},
+  {title:'Voting App — Microservices', date:'Nov–Dec 2025', tags:['Docker','Microservices','DevOps'],   desc:'Multi-tier microservices voting system using Docker containers with decoupled service communication and orchestration.',link:'https://github.com/sohel87399', demo:null},
+  {title:'Titanic Survival Prediction',date:'Dec 2025',     tags:['Python','ML','Data Science'],         desc:'ML classification model for passenger survival prediction with data preprocessing, training, and evaluation. Live demo available on Streamlit.',link:'https://github.com/sohel87399', demo:'https://titanic-survival-prediction-bndkb979xavgherjmjuzyy.streamlit.app/'},
 ];
 const ALL_TAGS = ['All', ...new Set(ALL_PROJECTS.flatMap(p => p.tags))];
 
 function ProjectCard({ p, i }) {
   const [hov, setHov] = useState(false);
+  const colors = [
+    {from:'rgba(201,103,232,0.15)',to:'rgba(152,58,214,0.05)',accent:'#FA93FA',border:'rgba(201,103,232,0.40)'},
+    {from:'rgba(74,222,128,0.10)',to:'rgba(16,185,129,0.04)',accent:'#4ade80',border:'rgba(74,222,128,0.35)'},
+  ];
+  const c = colors[i % colors.length];
   return (
-    <div className={`reveal card`} style={{transitionDelay:`${i*0.07}s`,display:'flex',flexDirection:'column',gap:14,height:'100%',position:'relative',overflow:'hidden'}}
+    <div className="reveal"
+      style={{
+        transitionDelay:`${i*0.12}s`,
+        position:'relative',overflow:'hidden',
+        borderRadius:24,
+        padding:'48px clamp(28px,5vw,64px)',
+        background: hov
+          ? `linear-gradient(135deg,${c.from},${c.to})`
+          : 'rgba(255,255,255,0.03)',
+        border:`1px solid ${hov ? c.border : 'rgba(255,255,255,0.07)'}`,
+        backdropFilter:'blur(16px)',
+        transition:'all 0.35s ease',
+        transform: hov ? 'translateY(-6px)' : 'translateY(0)',
+        boxShadow: hov ? `0 24px 80px ${c.from}` : 'none',
+        display:'flex',flexDirection:'column',gap:20,
+      }}
       onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}>
-      {/* glow orb on hover */}
-      <div style={{position:'absolute',top:-40,right:-40,width:120,height:120,borderRadius:'50%',background:'radial-gradient(circle,rgba(201,103,232,0.18),transparent 70%)',opacity:hov?1:0,transition:'opacity 0.3s',pointerEvents:'none'}}/>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
-        <h3 className="rubik" style={{fontSize:15,color:'#fff',textTransform:'uppercase',letterSpacing:'-0.3px',lineHeight:1.25}}>{p.title}</h3>
-        <span style={{fontSize:11,color:'rgba(255,255,255,0.28)',whiteSpace:'nowrap',marginTop:2}}>{p.date}</span>
+
+      {/* big number */}
+      <div style={{
+        position:'absolute',top:20,right:32,
+        fontFamily:'Rubik,sans-serif',fontWeight:900,
+        fontSize:'clamp(80px,12vw,160px)',lineHeight:1,
+        color:'rgba(255,255,255,0.03)',
+        pointerEvents:'none',userSelect:'none',
+        transition:'color 0.35s',
+        ...(hov?{color:`rgba(255,255,255,0.06)`}:{}),
+      }}>0{i+1}</div>
+
+      {/* top row */}
+      <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap',gap:12}}>
+        <div>
+          <p style={{fontSize:12,color:c.accent,fontWeight:700,letterSpacing:'0.18em',textTransform:'uppercase',marginBottom:10}}>{p.date}</p>
+          <h3 className="rubik-black" style={{fontSize:'clamp(26px,4vw,48px)',color:'#fff',textTransform:'uppercase',lineHeight:1.05,letterSpacing:'-1px'}}>{p.title}</h3>
+        </div>
+        <div style={{display:'flex',flexWrap:'wrap',gap:8,paddingTop:4}}>
+          {p.tags.map(t=>(
+            <span key={t} style={{
+              background:`rgba(255,255,255,0.06)`,
+              border:`1px solid rgba(255,255,255,0.12)`,
+              borderRadius:9999,padding:'5px 14px',
+              fontSize:12,color:'rgba(255,255,255,0.75)',fontWeight:500,
+            }}>{t}</span>
+          ))}
+        </div>
       </div>
-      <p style={{fontSize:13,color:'rgba(255,255,255,0.52)',lineHeight:1.7,flex:1}}>{p.desc}</p>
-      <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-        {p.tags.map(t=><span key={t} className="pill" style={{fontSize:11}}>{t}</span>)}
+
+      {/* divider */}
+      <div style={{height:1,background:`linear-gradient(90deg,${c.border},transparent)`}}/>
+
+      {/* desc */}
+      <p style={{fontSize:'clamp(14px,1.8vw,18px)',color:'rgba(255,255,255,0.60)',lineHeight:1.75,maxWidth:720}}>{p.desc}</p>
+
+      {/* links */}
+      <div style={{display:'flex',gap:20,flexWrap:'wrap',alignItems:'center',marginTop:8}}>
+        <a href={p.link} target="_blank" rel="noopener noreferrer"
+          style={{display:'inline-flex',alignItems:'center',gap:8,fontSize:14,color:'rgba(255,255,255,0.55)',textDecoration:'none',fontWeight:600,transition:'color 0.2s'}}
+          onMouseEnter={e=>e.currentTarget.style.color='#fff'}
+          onMouseLeave={e=>e.currentTarget.style.color='rgba(255,255,255,0.55)'}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+          View on GitHub
+        </a>
+        {p.demo && (
+          <a href={p.demo} target="_blank" rel="noopener noreferrer"
+            style={{
+              display:'inline-flex',alignItems:'center',gap:8,
+              fontSize:14,fontWeight:700,textDecoration:'none',
+              padding:'10px 24px',borderRadius:9999,
+              background:`linear-gradient(135deg,${c.accent}22,${c.accent}11)`,
+              border:`1px solid ${c.accent}66`,
+              color:c.accent,
+              transition:'all 0.2s',
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background=`${c.accent}33`;e.currentTarget.style.borderColor=c.accent}}
+            onMouseLeave={e=>{e.currentTarget.style.background=`linear-gradient(135deg,${c.accent}22,${c.accent}11)`;e.currentTarget.style.borderColor=`${c.accent}66`}}>
+            🚀 Live Demo
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        )}
       </div>
-      <a href={p.link} target="_blank" rel="noopener noreferrer" style={{display:'inline-flex',alignItems:'center',gap:6,fontSize:12,color:'rgba(201,103,232,0.80)',textDecoration:'none',fontWeight:600,marginTop:4,transition:'color 0.2s'}}
-        onMouseEnter={e=>e.currentTarget.style.color='#FA93FA'}
-        onMouseLeave={e=>e.currentTarget.style.color='rgba(201,103,232,0.80)'}>
-        View on GitHub
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-      </a>
     </div>
   );
 }
 
 function Projects() {
-  const [filter, setFilter] = useState('All');
-  const visible = filter === 'All' ? ALL_PROJECTS : ALL_PROJECTS.filter(p => p.tags.includes(filter));
   return (
     <section id="projects" style={{padding:'96px 0'}}>
       <div style={{maxWidth:1152,margin:'0 auto',padding:'0 clamp(20px,5vw,80px)'}}>
-        <div className="reveal" style={{marginBottom:40}}>
+        <div className="reveal" style={{marginBottom:56}}>
           <h2 className="rubik-black" style={{fontSize:'clamp(40px,6vw,72px)',textTransform:'uppercase',lineHeight:0.95,letterSpacing:'-2px'}}>
             <span className="grad-text">PROJECTS</span><br/>
             <span style={{color:'#fff'}}>I'VE BUILT.</span>
           </h2>
           <p style={{marginTop:14,fontSize:15,color:'rgba(255,255,255,0.50)',maxWidth:500}}>Designed, engineered, and shipped — from microservices to ML models.</p>
         </div>
-        {/* filter bar */}
-        <div className="reveal" style={{display:'flex',flexWrap:'wrap',gap:8,marginBottom:36}}>
-          {ALL_TAGS.map(t=>(
-            <button key={t} className={`filter-btn${filter===t?' on':''}`} onClick={()=>setFilter(t)}>{t}</button>
-          ))}
-        </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))',gap:20}}>
-          {visible.map((p,i)=><ProjectCard key={p.title} p={p} i={i}/>)}
+        <div style={{display:'flex',flexDirection:'column',gap:24}}>
+          {ALL_PROJECTS.map((p,i)=><ProjectCard key={p.title} p={p} i={i}/>)}
         </div>
       </div>
     </section>
@@ -610,9 +860,9 @@ function Projects() {
    EXPERIENCE — timeline + certs
 ───────────────────────────────────────────────────────────────────────── */
 const EDU = [
-  {deg:'B.Tech CSE — Data Science',        inst:'G. Pulla Reddy Engineering College',     period:'2023–2027', score:'In Progress'},
-  {deg:'Senior Secondary (XII) — Science', inst:'Sri Chaitanya Raman Bhavan, Vijayawada', period:'2023',      score:'98%'},
-  {deg:'Secondary (X) — SSC',              inst:'A.P.R School, Anantapur',                period:'2021',      score:'CGPA 10.0/10'},
+  {deg:'B.Tech CSE — Data Science',        inst:'G. Pulla Reddy Engineering College',     period:'2023–2027', score:'9.0 GPA',      icon:'🎓'},
+  {deg:'Senior Secondary (XII) — Science', inst:'Sri Chaitanya Raman Bhavan, Vijayawada', period:'2023',      score:'96%',         icon:'📘'},
+  {deg:'Secondary (X) — SSC',              inst:'A.P.R School, Anantapur',                period:'2021',      score:'9.8 GPA',      icon:'🏫'},
 ];
 const CERTS = [
   'Jenkins Certification','Certified Kubernetes Administrator','AWS Basics',
@@ -643,42 +893,36 @@ function Experience() {
   return (
     <section id="experience" style={{padding:'96px 0'}}>
       <div style={{maxWidth:1152,margin:'0 auto',padding:'0 clamp(20px,5vw,80px)'}}>
-        <div className="reveal" style={{marginBottom:56}}>
-          <h2 className="rubik-black" style={{fontSize:'clamp(40px,6vw,72px)',textTransform:'uppercase',lineHeight:0.95,letterSpacing:'-2px'}}>
+        <div className="reveal" style={{marginBottom:64}}>
+          <h2 className="rubik-black" style={{fontSize:'clamp(48px,7vw,84px)',textTransform:'uppercase',lineHeight:0.92,letterSpacing:'-3px'}}>
             <span className="grad-text">EDUCATION &</span><br/>
             <span style={{color:'#fff'}}>CREDENTIALS.</span>
           </h2>
-          <p style={{marginTop:14,fontSize:15,color:'rgba(255,255,255,0.50)',maxWidth:500}}>Academic background, verified certifications, and hackathon achievements.</p>
+          <p style={{marginTop:16,fontSize:16,color:'rgba(255,255,255,0.50)',maxWidth:500}}>Academic background, verified certifications, and hackathon achievements.</p>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:20}}>
 
-          {/* education timeline */}
-          <div className="reveal left card">
-            <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:24}}>Education</p>
-            <div style={{position:'relative',paddingLeft:20}}>
-              <div className="tl-line"/>
-              {EDU.map((e,i)=>(
-                <div key={i} style={{position:'relative',marginBottom:i<EDU.length-1?28:0}}>
-                  <div style={{position:'absolute',left:-20,top:4,width:11,height:11,borderRadius:'50%',background:'linear-gradient(135deg,#FA93FA,#983AD6)',boxShadow:'0 0 8px rgba(201,103,232,0.6)'}}/>
-                  <p style={{fontSize:14,color:'#fff',fontWeight:600,lineHeight:1.3}}>{e.deg}</p>
-                  <p style={{fontSize:12,color:'rgba(255,255,255,0.42)',marginTop:3}}>{e.inst}</p>
-                  <div style={{display:'flex',gap:12,marginTop:5}}>
-                    <span style={{fontSize:11,color:'rgba(255,255,255,0.28)'}}>{e.period}</span>
-                    <span style={{fontSize:11,color:'#c084fc',fontWeight:700}}>{e.score}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {/* ── EDUCATION big animated cards ── */}
+        <div className="reveal" style={{marginBottom:48}}>
+          <p className="rubik" style={{fontSize:12,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.18em',marginBottom:24}}>Education</p>
+          <div style={{display:'flex',flexDirection:'column',gap:16}}>
+            {EDU.map((e,i)=>{
+              const isFirst = i===0;
+              return (
+                <EduCard key={i} e={e} i={i}/>
+              );
+            })}
           </div>
+        </div>
 
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:20}}>
           {/* certs */}
-          <div className="reveal card">
-            <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:20}}>Certifications — KodeKloud & NPTEL</p>
-            <div style={{display:'flex',flexDirection:'column',gap:11}}>
+          <div className="reveal left card">
+            <p className="rubik" style={{fontSize:12,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:24}}>Certifications — KodeKloud &amp; NPTEL</p>
+            <div style={{display:'flex',flexDirection:'column',gap:14}}>
               {CERTS.map((c,i)=>(
-                <div key={c} className="reveal" style={{transitionDelay:`${i*0.05}s`,display:'flex',alignItems:'center',gap:10}}>
-                  <span style={{width:6,height:6,borderRadius:'50%',background:'linear-gradient(135deg,#FA93FA,#983AD6)',flexShrink:0}}/>
-                  <span style={{fontSize:13,color:'rgba(255,255,255,0.75)'}}>{c}</span>
+                <div key={c} className="reveal" style={{transitionDelay:`${i*0.06}s`,display:'flex',alignItems:'center',gap:12}}>
+                  <span style={{width:8,height:8,borderRadius:'50%',background:'linear-gradient(135deg,#FA93FA,#983AD6)',flexShrink:0,boxShadow:'0 0 6px rgba(201,103,232,0.6)'}}/>
+                  <span style={{fontSize:15,color:'rgba(255,255,255,0.80)',fontWeight:500}}>{c}</span>
                 </div>
               ))}
             </div>
@@ -686,47 +930,110 @@ function Experience() {
 
           {/* hackathons */}
           <div className="reveal right card">
-            <p className="rubik" style={{fontSize:11,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:20}}>Hackathons & Activities</p>
-            <div style={{display:'flex',flexDirection:'column',gap:18}}>
+            <p className="rubik" style={{fontSize:12,color:'#c084fc',textTransform:'uppercase',letterSpacing:'0.14em',marginBottom:24}}>Hackathons &amp; Activities</p>
+            <div style={{display:'flex',flexDirection:'column',gap:20}}>
               {HACKATHONS.map((h,i)=> h.win ? (
                 <div key={i} className="win-card">
-                  {/* badge row */}
                   <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8,marginBottom:12}}>
                     <span className="win-badge">🏆 {h.role}</span>
-                    <span style={{fontSize:11,color:'rgba(251,191,36,0.55)',fontWeight:600,letterSpacing:'0.06em'}}>{h.organizer}</span>
+                    <span style={{fontSize:12,color:'rgba(251,191,36,0.55)',fontWeight:600,letterSpacing:'0.06em'}}>{h.organizer}</span>
                   </div>
-                  {/* title + project */}
-                  <p style={{fontSize:15,color:'#fff',fontWeight:700,lineHeight:1.3}}>{h.title}</p>
-                  <p style={{fontSize:12,color:'rgba(251,191,36,0.75)',fontWeight:600,marginTop:3,letterSpacing:'0.05em'}}>Project: {h.project}</p>
-                  {/* description */}
-                  <p style={{fontSize:12,color:'rgba(255,255,255,0.52)',marginTop:10,lineHeight:1.65}}>{h.desc}</p>
-                  {/* highlights */}
-                  <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:12}}>
+                  <p style={{fontSize:17,color:'#fff',fontWeight:700,lineHeight:1.3}}>{h.title}</p>
+                  <p style={{fontSize:13,color:'rgba(251,191,36,0.75)',fontWeight:600,marginTop:4,letterSpacing:'0.05em'}}>Project: {h.project}</p>
+                  <p style={{fontSize:13,color:'rgba(255,255,255,0.52)',marginTop:10,lineHeight:1.7}}>{h.desc}</p>
+                  <div style={{display:'flex',flexDirection:'column',gap:7,marginTop:12}}>
                     {h.highlights.map((hl,j)=>(
                       <div key={j} style={{display:'flex',alignItems:'flex-start',gap:8}}>
-                        <span style={{fontSize:13,flexShrink:0,marginTop:1}}>{hl.icon}</span>
-                        <span style={{fontSize:12,color:'rgba(255,255,255,0.68)',lineHeight:1.5}}>{hl.text}</span>
+                        <span style={{fontSize:14,flexShrink:0,marginTop:1}}>{hl.icon}</span>
+                        <span style={{fontSize:13,color:'rgba(255,255,255,0.68)',lineHeight:1.55}}>{hl.text}</span>
                       </div>
                     ))}
                   </div>
-                  {/* tags */}
                   <div style={{display:'flex',flexWrap:'wrap',gap:6,marginTop:14}}>
                     {h.tags.map(t=><span key={t} className="win-tag">{t}</span>)}
                   </div>
                 </div>
               ) : (
-                <div key={i} style={{borderLeft:'2px solid rgba(201,103,232,0.30)',paddingLeft:14}}>
-                  <p style={{fontSize:14,color:'#fff',fontWeight:600}}>{h.title}</p>
-                  <p style={{fontSize:11,color:'#c084fc',fontWeight:600,marginTop:2,textTransform:'uppercase',letterSpacing:'0.08em'}}>{h.role}</p>
-                  <p style={{fontSize:12,color:'rgba(255,255,255,0.48)',marginTop:5,lineHeight:1.6}}>{h.desc}</p>
+                <div key={i} style={{borderLeft:'2px solid rgba(201,103,232,0.30)',paddingLeft:16}}>
+                  <p style={{fontSize:16,color:'#fff',fontWeight:700}}>{h.title}</p>
+                  <p style={{fontSize:12,color:'#c084fc',fontWeight:600,marginTop:3,textTransform:'uppercase',letterSpacing:'0.08em'}}>{h.role}</p>
+                  <p style={{fontSize:13,color:'rgba(255,255,255,0.50)',marginTop:6,lineHeight:1.65}}>{h.desc}</p>
                 </div>
               ))}
             </div>
           </div>
-
         </div>
       </div>
     </section>
+  );
+}
+
+function EduCard({e, i}) {
+  const ref = useRef(null);
+  const [vis, setVis] = useState(false);
+  const [hov, setHov] = useState(false);
+  useEffect(()=>{
+    const obs = new IntersectionObserver(([en])=>{if(en.isIntersecting){setVis(true);obs.disconnect();}},{threshold:0.15});
+    if(ref.current) obs.observe(ref.current);
+    return ()=>obs.disconnect();
+  },[]);
+  return (
+    <div ref={ref}
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        position:'relative',overflow:'hidden',
+        borderRadius:20,
+        padding:'32px clamp(24px,4vw,48px)',
+        background: hov ? 'rgba(201,103,232,0.10)' : 'rgba(255,255,255,0.04)',
+        border:`1px solid ${hov?'rgba(201,103,232,0.45)':'rgba(255,255,255,0.08)'}`,
+        backdropFilter:'blur(14px)',
+        display:'flex',alignItems:'center',gap:28,flexWrap:'wrap',
+        opacity: vis?1:0,
+        transform: vis ? 'translateX(0)' : `translateX(${i%2===0?'-40px':'40px'})`,
+        transition:`opacity 0.7s ease ${i*0.15}s, transform 0.7s ease ${i*0.15}s, border-color 0.3s, background 0.3s`,
+        boxShadow: hov ? '0 16px 48px rgba(152,58,214,0.18)' : 'none',
+      }}
+    >
+      {/* big icon */}
+      <div style={{fontSize:'clamp(36px,5vw,52px)',flexShrink:0,filter:'drop-shadow(0 0 12px rgba(201,103,232,0.5))'}}>{e.icon}</div>
+
+      {/* text */}
+      <div style={{flex:1,minWidth:180}}>
+        <p style={{fontSize:'clamp(17px,2.2vw,22px)',color:'#fff',fontWeight:800,lineHeight:1.25,marginBottom:6}}>{e.deg}</p>
+        <p style={{fontSize:'clamp(13px,1.5vw,16px)',color:'rgba(255,255,255,0.45)',marginBottom:8}}>{e.inst}</p>
+        <span style={{fontSize:13,color:'rgba(255,255,255,0.28)',letterSpacing:'0.05em'}}>{e.period}</span>
+      </div>
+
+      {/* big score badge */}
+      <div style={{
+        flexShrink:0,
+        padding:'14px 24px',
+        borderRadius:14,
+        background:'linear-gradient(135deg,rgba(201,103,232,0.18),rgba(152,58,214,0.10))',
+        border:'1px solid rgba(201,103,232,0.35)',
+        textAlign:'center',
+      }}>
+        <p style={{
+          fontFamily:'Rubik,sans-serif',fontWeight:900,
+          fontSize:'clamp(22px,3.5vw,36px)',
+          background:'linear-gradient(135deg,#fff,#FA93FA)',
+          WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',backgroundClip:'text',
+          lineHeight:1,marginBottom:4,
+        }}>{e.score}</p>
+        <p style={{fontSize:11,color:'rgba(255,255,255,0.35)',textTransform:'uppercase',letterSpacing:'0.1em'}}>Score</p>
+      </div>
+
+      {/* animated left border line */}
+      <div style={{
+        position:'absolute',left:0,top:0,bottom:0,width:3,
+        background:'linear-gradient(to bottom,#FA93FA,#983AD6)',
+        transform: hov?'scaleY(1)':'scaleY(0)',
+        transformOrigin:'top',
+        transition:'transform 0.35s ease',
+        borderRadius:'0 2px 2px 0',
+      }}/>
+    </div>
   );
 }
 
